@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微觀密室逃脫：原子結構達人</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft JhengHei", "PingFang TC", "PMingLiU", sans-serif; margin: 0; background: #0d1b2a; color: #e8eef7; line-height: 1.7; }
+  .container { max-width: 880px; margin: 0 auto; padding: 20px; }
+  header { background: linear-gradient(135deg, #1b263b, #5a189a); border: 1px solid #6d28d9; box-shadow: 0 0 22px rgba(109,40,217,.45); color: #fff; padding: 20px 22px; border-radius: 14px; margin-bottom: 16px; text-align: center; }
+  header h1 { margin: 0 0 6px 0; font-size: 25px; letter-spacing: 1px; }
+  header .sub { margin: 0; font-size: 14px; opacity: .9; }
+
+  .info-bar { background: #14233c; border: 1px solid #2d4361; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+  .info-bar .blk { display: inline-block; border-bottom: 2px dashed #7b8ea9; min-width: 60px; color: #ffd166; font-weight: 700; }
+  .timer { background: #2a9d8f; color: #04221d; font-weight: 800; padding: 8px 18px; border-radius: 30px; font-size: 20px; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+  .timer.warn { background: #e9c46a; color: #4a3000; }
+  .timer.danger { background: #e63946; color: #fff; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .6; } }
+  .progress-track { background: #0b1626; border: 1px solid #2a3f5e; border-radius: 8px; height: 14px; overflow: hidden; margin-top: 8px; width: 100%; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #2a9d8f, #9b5de5); transition: width .4s; }
+
+  .section { background: #101f36; border: 2px solid #2d4361; border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; display: none; }
+  .section.visible { display: block; animation: slideUp .4s ease; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .section.done { border-color: #2a9d8f; }
+  .section h2 { margin: -18px -20px 14px -20px; padding: 14px 20px; border-bottom: 2px solid #6d28d9; font-size: 19px; color: #c4b5fd; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .section h2 .line { font-size: 13px; color: #7b8ea9; font-weight: 600; }
+  .level-score { font-size: 14px; color: #ffd166; font-weight: 800; }
+
+  .q { margin-bottom: 14px; padding: 12px 14px; border: 1px solid #22344f; border-radius: 10px; background: #0e1a2c; }
+  .q.ok { border-color: #2a9d8f; background: #12333a; }
+  .q.no { border-color: #e63946; background: #331822; }
+  .q .no { font-weight: 700; color: #c4b5fd; margin-right: 4px; }
+  .q .pts { float: right; font-size: 13px; color: #ffd166; font-weight: 700; }
+  .q .fig { text-align: center; margin: 8px 0 4px 0; }
+  .q .fig svg { background: #0b1626; border: 1px solid #2a3f5e; border-radius: 10px; padding: 4px; max-width: 100%; }
+  .opts { margin: 6px 0 0 6px; }
+  .opts label { display: inline-block; cursor: pointer; margin: 4px 14px 4px 0; padding: 6px 14px; border: 2px solid #364e6d; border-radius: 22px; transition: all .15s; user-select: none; }
+  .opts label:hover { border-color: #9b5de5; background: #1c2f4a; }
+  .opts input { display: none; }
+  .opts label.sel { border-color: #ffd166; background: #6d28d9; color: #fff; box-shadow: 0 0 10px rgba(255,209,102,.4); font-weight: 800; }
+
+  .match-row { margin: 8px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .match-left { width: 200px; font-weight: 600; color: #c4b5fd; }
+  .match-right { flex: 1; min-width: 280px; }
+  .match-right select { font-family: inherit; font-size: 14px; padding: 6px 8px; border: 2px solid #364e6d; border-radius: 8px; width: 100%; background: #0e1a2c; color: #e8eef7; }
+  .match-right select.hl { border-color: #ffd166; background: #6d28d9; }
+
+  .button-row { text-align: center; margin: 16px 0 4px 0; }
+  .btn { font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; padding: 11px 30px; border: none; border-radius: 30px; color: #fff; transition: transform .1s, filter .2s; margin: 0 6px; }
+  .btn-submit { background: linear-gradient(135deg, #6d28d9, #9b5de5); }
+  .btn-start { background: linear-gradient(135deg, #2a9d8f, #43b09a); font-size: 18px; }
+  .btn-reset { background: linear-gradient(135deg, #444, #666); }
+  .btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .start-overlay { position: fixed; inset: 0; background: rgba(5,9,18,.96); z-index: 60; display: flex; padding: 14px; overflow: auto; }
+  .start-overlay.hide { display: none; }
+  .start-card { background: #101f36; border: 2px solid #6d28d9; border-radius: 20px; max-width: 640px; width: 100%; padding: 24px 26px; margin: auto; box-shadow: 0 20px 70px rgba(0,0,0,.7); animation: pop .4s ease; }
+  @keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .start-card h2 { margin: 0 0 8px 0; font-size: 27px; color: #ffd166; text-align: center; }
+  .start-card .tagline { text-align: center; color: #c4b5fd; font-size: 15px; margin-bottom: 16px; }
+  .rules { background: #0e1a2c; border: 1px solid #2d4361; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+  .rules b { color: #ffd166; }
+  .rules table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
+  .rules td, .rules th { border: 1px solid #2d4361; padding: 4px 7px; text-align: left; }
+  .rules th { background: #14233c; color: #c4b5fd; }
+  .player-pick { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 18px; }
+  .player-pick label { font-size: 15px; color: #a9bedb; }
+  .player-pick select { font-family: inherit; font-size: 15px; padding: 8px 12px; margin-left: 6px; border: 2px solid #364e6d; border-radius: 8px; background: #0e1a2c; color: #e8eef7; }
+  .need { color: #e63946; font-weight: 700; }
+  .hint-err { color: #e63946; font-size: 14px; text-align: center; display: none; margin-top: 8px; }
+  .start-foot { text-align: center; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(4,8,16,.78); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(3px); }
+  .overlay.show { display: flex; }
+  .result-card { background: #101f36; border: 2px solid #6d28d9; border-radius: 18px; padding: 26px 30px; max-width: 520px; width: 94%; text-align: center; max-height: 94vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: pop .3s ease; }
+  .result-card h2 { margin: 0 0 4px 0; font-size: 24px; color: #c4b5fd; }
+  .score-big { font-size: 56px; font-weight: 800; margin: 12px 0; color: #ffd166; }
+  .trophy { font-size: 48px; }
+  .grade-msg { font-size: 18px; font-weight: 700; margin: 6px 0 2px 0; color: #e8eef7; }
+  .result-card .breakdown { font-size: 14px; color: #a9bedb; margin-bottom: 12px; text-align: left; }
+  .result-card .breakdown .row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #2d4361; }
+  .analysis { background: #0e1a2c; border: 1px solid #2d4361; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; text-align: left; font-size: 14px; }
+  .analysis b { color: #ffd166; }
+  .analysis .good { color: #2a9d8f; font-weight: 700; }
+  .analysis .weak { color: #e63946; font-weight: 700; }
+  .analysis .his { font-size: 13px; color: #a9bedb; margin-top: 6px; }
+  .result-card .btn { margin-top: 6px; }
+  footer { text-align: center; color: #57677f; font-size: 12px; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ============ 首頁：遊戲介紹與規則 ============ -->
+<div class="start-overlay" id="startOverlay">
+  <div class="start-card">
+    <h2>🔐 微觀密室逃脫　原子結構達人</h2>
+    <p class="tagline">高三（文科）綜合科學｜化學的微觀世界：課題一 原子結構</p>
+    <div class="rules">
+      <b>📜 遊戲介紹</b><br>
+      你將潛入「原子密室」，沿著科學家們的接力賽逃出生天！從道爾頓、湯姆森、盧瑟福到玻爾，最後揪出密室裡的<span style="color:#ffd166;">內鬼</span>。每一關都是一道密室門，<b>必須答好該關全部題目</b>才能解鎖下一關。
+      <br><br>
+      <b>🎮 遊戲規則</b>
+      <table>
+        <tr><th>項目</th><th>說明</th></tr>
+        <tr><td>⏱ 時間</td><td>限時 <b>15 分鐘</b>，時間到自動結算</td></tr>
+        <tr><td>🗝 解鎖</td><td>每一關所有題目<b>全部作答</b>後才能提交，提交後不可修改</td></tr>
+        <tr><td>🏅 計分</td><td>共 5 關、18 題，滿分 <b>100 分</b>，每關分數即時結算</td></tr>
+        <tr><td>🖼 看圖題</td><td>部分題目附有原子示意圖，要看清楚再作答</td></tr>
+        <tr><td>🐺 彩蛋</td><td>找齊全部鎖鑰、揪出內鬼，可獲得特別稱號！</td></tr>
+      </table>
+      <br>
+      <b>🗺 五關一覽</b>
+      <table>
+        <tr><th>關卡</th><th>地點</th><th>分數</th></tr>
+        <tr><td>第 1 關</td><td>道爾頓檔案室（1803）</td><td>20 分</td></tr>
+        <tr><td>第 2 關</td><td>湯姆森布丁實驗室（1897）</td><td>20 分</td></tr>
+        <tr><td>第 3 關</td><td>盧瑟福α粒子射擊場（1911）</td><td>20 分</td></tr>
+        <tr><td>第 4 關</td><td>玻爾軌道密室（1913）</td><td>20 分</td></tr>
+        <tr><td>第 5 關</td><td>密室狼人殺：找出內鬼！</td><td>20 分</td></tr>
+      </table>
+    </div>
+    <div class="player-pick">
+      <label>班級 <span class="need">＊必選</span>：
+        <select id="clsSel">
+          <option value="">— 請選擇班級 —</option>
+          <option value="高三文靜">高三文靜</option>
+          <option value="高三文恆">高三文恆</option>
+        </select>
+      </label>
+      <label>組號 <span class="need">＊必選</span>：
+        <select id="grpSel">
+          <option value="">— 請選擇組號 —</option>
+          <option value="第 1 組">第 1 組</option>
+          <option value="第 2 組">第 2 組</option>
+          <option value="第 3 組">第 3 組</option>
+          <option value="第 4 組">第 4 組</option>
+          <option value="第 5 組">第 5 組</option>
+          <option value="第 6 組">第 6 組</option>
+          <option value="第 7 組">第 7 組</option>
+          <option value="第 8 組">第 8 組</option>
+          <option value="第 9 組">第 9 組</option>
+          <option value="第 10 組">第 10 組</option>
+        </select>
+      </label>
+    </div>
+    <p class="hint-err" id="pickErr">⚠ 尚未選擇班級或組號，請先完成再出發！</p>
+    <div class="start-foot">
+      <button class="btn btn-start" onclick="startGame()">🚀 開始逃脫！計時開始</button>
+      <p style="font-size:12px;color:#57677f;margin-top:10px;">※ 結束後系統會依組別分析本次闖關表現並自動存檔。</p>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="gameBody">
+  <header>
+    <h1>🔐 微觀密室逃脫　原子結構達人</h1>
+    <p class="sub">高三（文科）綜合科學｜化學的微觀世界：課題一 原子結構｜15分鐘內逃出原子密室！</p>
+  </header>
+  <div class="info-bar">
+    <div><b>班級：</b><span class="blk" id="clsShow">—</span></div>
+    <div><b>組號：</b><span class="blk" id="grpShow">—</span></div>
+    <div>⏱ 剩餘時間：<span class="timer" id="timer">15:00</span></div>
+    <div style="width:100%;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#a9bedb;"><span>逃脫進度</span><span id="cumLabel">累計 0 / 100 分</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+
+  <!-- ====== 第1關：道爾頓檔案室 ====== -->
+  <div class="section visible" id="lv1">
+    <h2>🧪 第1關　道爾頓檔案室（1803）<span class="level-score" id="lv1Chip"></span></h2>
+
+    <div class="q" data-ans="b" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">1.</span> 謎題：「我不是祭司，卻被譽為近代化學之父。」這位提出科學原子理論的科學家是？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q1" value="a"><span>A. 湯姆森</span></label>
+        <label data-v="b"><input type="radio" name="q1" value="b"><span>B. 道爾頓</span></label>
+        <label data-v="c"><input type="radio" name="q1" value="c"><span>C. 盧瑟福</span></label>
+        <label data-v="d"><input type="radio" name="q1" value="d"><span>D. 玻爾</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="a" data-pts="5">
+      <span class="pts">5 分</span>
+      <div class="fig">
+        <svg viewBox="0 0 220 130" width="240" height="142" role="img" aria-label="實心球示意圖">
+          <circle cx="110" cy="72" r="45" fill="#3b82c4" stroke="#1b263b" stroke-width="3"/>
+          <circle cx="110" cy="72" r="38" fill="none" stroke="#dbeafe" stroke-dasharray="6,6" opacity=".55"/>
+          <circle cx="94" cy="62" r="3.4" fill="#fff"/>
+          <circle cx="126" cy="62" r="3.4" fill="#fff"/>
+          <path d="M96 80 A14 12 0 0 0 124 80" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <text x="110" y="28" text-anchor="middle" fill="#ffd166" font-size="14" font-weight="bold">一顆…實心的圓球？</text>
+        </svg>
+      </div>
+      <span class="no">2.</span> 圖中這種「堅實、不可再分的實心球」原子觀，出自哪一位科學家？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q2" value="a"><span>A. 道爾頓</span></label>
+        <label data-v="b"><input type="radio" name="q2" value="b"><span>B. 湯姆森</span></label>
+        <label data-v="c"><input type="radio" name="q2" value="c"><span>C. 盧瑟福</span></label>
+        <label data-v="d"><input type="radio" name="q2" value="d"><span>D. 玻爾</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="b" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">3.</span> 道爾頓的鐵律「原子不可再分」，後來被哪一項發現狠狠打臉？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q3" value="a"><span>A. 發現中子</span></label>
+        <label data-v="b"><input type="radio" name="q3" value="b"><span>B. 發現電子</span></label>
+        <label data-v="c"><input type="radio" name="q3" value="c"><span>C. 發現同位素</span></label>
+        <label data-v="d"><input type="radio" name="q3" value="d"><span>D. 測定原子量</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="t" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">4.</span> 道爾頓主張：「化合物由不同元素以固定的簡單整數比結合」，例如二氧化碳中碳、氧原子數比恆為 1：2。<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q4" value="t"><span>✅ 正確 (✓)</span></label>
+        <label data-v="f"><input type="radio" name="q4" value="f"><span>❌ 錯誤 (✗)</span></label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-submit" data-lv="1" onclick="submitLevel(1)">🔓 提交本關，解鎖第2關</button>
+    </div>
+  </div>
+
+<!-- ====== 第2關：湯姆森布丁實驗室 ====== -->
+  <div class="section" id="lv2">
+    <h2>🍮 第2關　湯姆森布丁實驗室（1897）<span class="level-score" id="lv2Chip"></span></h2>
+
+    <div class="q" data-ans="c" data-pts="6">
+      <span class="pts">6 分</span>
+      <span class="no">5.</span> 湯姆森是拿什麼當「探針」，第一次在原子裡挖出了電子、還量出它的質荷比？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q5" value="a"><span>A. α粒子散射實驗</span></label>
+        <label data-v="b"><input type="radio" name="q5" value="b"><span>B. 金箔實驗</span></label>
+        <label data-v="c"><input type="radio" name="q5" value="c"><span>C. 陰極射線實驗</span></label>
+        <label data-v="d"><input type="radio" name="q5" value="d"><span>D. 光譜實驗</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="b" data-pts="7">
+      <span class="pts">7 分</span>
+      <div class="fig">
+        <svg viewBox="0 0 240 150" width="260" height="163" role="img" aria-label="布丁模型示意圖">
+          <rect x="35" y="30" width="170" height="95" rx="26" fill="#f4a261" stroke="#7f5539" stroke-width="3"/>
+          <text x="52" y="70" fill="#7f5539" font-size="17" font-weight="bold">+</text>
+          <text x="92" y="52" fill="#7f5539" font-size="17" font-weight="bold">+</text>
+          <text x="150" y="72" fill="#7f5539" font-size="17" font-weight="bold">+</text>
+          <text x="70" y="108" fill="#7f5539" font-size="17" font-weight="bold">+</text>
+          <text x="168" y="112" fill="#7f5539" font-size="17" font-weight="bold">+</text>
+          <circle cx="70" cy="45" r="7" fill="#2a6f97"/>
+          <circle cx="120" cy="95" r="7" fill="#2a6f97"/>
+          <circle cx="170" cy="50" r="7" fill="#2a6f97"/>
+          <circle cx="95" cy="75" r="7" fill="#2a6f97"/>
+          <text x="120" y="140" text-anchor="middle" fill="#ffd166" font-size="13" font-weight="bold">一碟……布丁？</text>
+        </svg>
+      </div>
+      <span class="no">6.</span> 圖中「正電像布丁、電子像葡萄乾」的模型，正式名稱是什麼？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q6" value="a"><span>A. 實心球模型</span></label>
+        <label data-v="b"><input type="radio" name="q6" value="b"><span>B. 葡萄乾布丁模型</span></label>
+        <label data-v="c"><input type="radio" name="q6" value="c"><span>C. 行星模型</span></label>
+        <label data-v="d"><input type="radio" name="q6" value="d"><span>D. 分層軌道模型</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="f" data-pts="7">
+      <span class="pts">7 分</span>
+      <span class="no">7.</span> 找到了電子之後，科學家大聲宣告：「道爾頓『原子不可再分』的鐵律完全正確！」<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q7" value="t"><span>✅ 正確 (✓)</span></label>
+        <label data-v="f"><input type="radio" name="q7" value="f"><span>❌ 錯誤 (✗)</span></label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-submit" data-lv="2" onclick="submitLevel(2)">🔓 提交本關，解鎖第3關</button>
+    </div>
+  </div>
+
+  <!-- ====== 第3關：盧瑟福α粒子射擊場 ====== -->
+  <div class="section" id="lv3">
+    <h2>🎯 第3關　盧瑟福α粒子射擊場（1911）<span class="level-score" id="lv3Chip"></span></h2>
+
+    <div class="q" data-ans="a" data-pts="7">
+      <span class="pts">7 分</span>
+      <div class="fig">
+        <svg viewBox="0 0 300 170" width="320" height="182" role="img" aria-label="α粒子散射實驗示意圖">
+          <rect x="10" y="20" width="290" height="140" fill="#0b1626" stroke="#2a3f5e"/>
+          <text x="40" y="48" fill="#e9c46a" font-size="13" font-weight="bold">α粒子束</text>
+          <g stroke="#ff7b54" stroke-width="4" stroke-linecap="round">
+            <line x1="30" y1="55" x2="130" y2="55"/>
+            <line x1="140" y1="55" x2="260" y2="55"/>
+            <line x1="30" y1="82" x2="95" y2="82"/>
+            <line x1="200" y1="112" x2="262" y2="120"/>
+            <line x1="30" y1="118" x2="95" y2="116"/>
+            <line x1="88" y1="116" x2="45" y2="78"/>
+          </g>
+          <polygon points="120,40 120,135 128,135 128,40" fill="#e6b36b" stroke="#8d6a3f" stroke-width="2"/>
+          <text x="124" y="152" text-anchor="middle" fill="#c4b5fd" font-size="13" font-weight="bold">金箔</text>
+          <circle cx="124" cy="90" r="5" fill="#ffd166"/>
+          <text x="146" y="92" fill="#ffd166" font-size="11">原子核</text>
+          <text x="165" y="40" fill="#2a9d8f" font-size="11">多數穿透</text>
+          <text x="218" y="125" fill="#9b5de5" font-size="11">少數偏轉</text>
+          <text x="12" y="78" fill="#e63946" font-size="11" font-weight="bold">極少數被彈回</text>
+        </svg>
+      </div>
+      <span class="no">8.</span> 如圖，盧瑟福讓α粒子炮轟薄金箔，發現「絕大多數α粒子直接穿透」，這說明原子內部？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q8" value="a"><span>A. 大部分是空的</span></label>
+        <label data-v="b"><input type="radio" name="q8" value="b"><span>B. 塞滿均勻的正電荷</span></label>
+        <label data-v="c"><input type="radio" name="q8" value="c"><span>C. 是堅實的實心球</span></label>
+        <label data-v="d"><input type="radio" name="q8" value="d"><span>D. 塞滿電子</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="a" data-pts="7">
+      <span class="pts">7 分</span>
+      <span class="no">9.</span> 如果真有α粒子「被彈回來」，等於在告訴盧瑟福原子中心藏著一顆？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q9" value="a"><span>A. 帶正電、體積極小、質量極大的原子核</span></label>
+        <label data-v="b"><input type="radio" name="q9" value="b"><span>B. 帶負電、體積巨大的外殼</span></label>
+        <label data-v="c"><input type="radio" name="q9" value="c"><span>C. 軟綿綿的空心氣泡</span></label>
+        <label data-v="d"><input type="radio" name="q9" value="d"><span>D. 由電子組成的棉花糖</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="t" data-pts="6">
+      <span class="pts">6 分</span>
+      <span class="no">10.</span> 盧瑟福的模型又被叫作「行星模型」——電子像行星繞太陽，繞著原子核打轉。<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q10" value="t"><span>✅ 正確 (✓)</span></label>
+        <label data-v="f"><input type="radio" name="q10" value="f"><span>❌ 錯誤 (✗)</span></label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-submit" data-lv="3" onclick="submitLevel(3)">🔓 提交本關，解鎖第4關</button>
+    </div>
+  </div>
+
+  <!-- ====== 第4關：玻爾軌道密室 ====== -->
+  <div class="section" id="lv4">
+    <h2>🪐 第4關　玻爾軌道密室（1913）<span class="level-score" id="lv4Chip"></span></h2>
+
+    <div class="q" data-ans="t" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">11.</span> 在玻爾的宇宙裡，電子只能在「指定的軌道」上繞行，既不會掉進原子核，也不會隨便亂發光。<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q11" value="t"><span>✅ 正確 (✓)</span></label>
+        <label data-v="f"><input type="radio" name="q11" value="f"><span>❌ 錯誤 (✗)</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="b" data-pts="5">
+      <span class="pts">5 分</span>
+      <div class="fig">
+        <svg viewBox="0 0 220 150" width="240" height="164" role="img" aria-label="分層軌道模型示意圖">
+          <circle cx="110" cy="75" r="12" fill="#ffd166" stroke="#b45309" stroke-width="2"/>
+          <text x="110" y="79" text-anchor="middle" fill="#4a3000" font-size="10" font-weight="bold">核</text>
+          <ellipse cx="110" cy="75" rx="38" ry="24" fill="none" stroke="#6d28d9" stroke-width="2"/>
+          <ellipse cx="110" cy="75" rx="62" ry="42" fill="none" stroke="#9b5de5" stroke-width="2"/>
+          <ellipse cx="110" cy="75" rx="88" ry="60" fill="none" stroke="#c4b5fd" stroke-width="2"/>
+          <circle cx="72" cy="75" r="5" fill="#2a9d8f"/>
+          <circle cx="172" cy="75" r="5" fill="#2a9d8f"/>
+          <circle cx="110" cy="117" r="5" fill="#2a9d8f"/>
+          <circle cx="110" cy="33" r="5" fill="#2a9d8f"/>
+          <text x="110" y="145" text-anchor="middle" fill="#ffd166" font-size="13" font-weight="bold">電子乖乖排排站</text>
+        </svg>
+      </div>
+      <span class="no">12.</span> 圖中「電子像坐電扶梯分層繞行」的模型，正確名稱是什麼？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q12" value="a"><span>A. 行星模型</span></label>
+        <label data-v="b"><input type="radio" name="q12" value="b"><span>B. 分層軌道模型（量子化）</span></label>
+        <label data-v="c"><input type="radio" name="q12" value="c"><span>C. 布丁模型</span></label>
+        <label data-v="d"><input type="radio" name="q12" value="d"><span>D. 實心球模型</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="a" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">13.</span> 玻爾祭出「定態」與「能階」兩張王牌，解救了盧瑟福模型的最大危機——？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q13" value="a"><span>A. 電子會一路放光、掉進原子核的墜落危機</span></label>
+        <label data-v="b"><input type="radio" name="q13" value="b"><span>B. 電子會集體逃出原子</span></label>
+        <label data-v="c"><input type="radio" name="q13" value="c"><span>C. 原子會發光發熱自爆</span></label>
+        <label data-v="d"><input type="radio" name="q13" value="d"><span>D. 原子會自動升空</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="b" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">14.</span> 玻爾模型最亮眼的戰績，是成功解開了哪隻「最簡單小動物的光譜謎團」？<br>
+      <div class="opts">
+        <label data-v="a"><input type="radio" name="q14" value="a"><span>A. 鈉（會噴黃光）</span></label>
+        <label data-v="b"><input type="radio" name="q14" value="b"><span>B. 氫（只有一顆質子、一顆電子）</span></label>
+        <label data-v="c"><input type="radio" name="q14" value="c"><span>C. 任何金屬</span></label>
+        <label data-v="d"><input type="radio" name="q14" value="d"><span>D. 惰性氣體</span></label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-submit" data-lv="4" onclick="submitLevel(4)">🔓 提交本關，迎戰最終關卡</button>
+    </div>
+  </div>
+
+  <!-- ====== 第5關：密室狼人殺 ====== -->
+  <div class="section" id="lv5">
+    <h2>🐺 第5關　密室狼人殺：找出內鬼！<span class="level-score" id="lv5Chip"></span></h2>
+    <p style="font-size:14px;color:#a9bedb;">末日警鐘敲響，原子密室裡混進了一名「內鬼」，不斷散播錯誤的科學知識。請逐一審問四名村民的證詞，判斷真偽——說謊的那位，就是內鬼！</p>
+
+    <div class="q" data-ans="t" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">15.</span> 村民甲：「盧瑟福用α粒子炮轟金箔，發現原子內部其實空蕩蕩的。」<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q15" value="t"><span>✅ 真話</span></label>
+        <label data-v="f"><input type="radio" name="q15" value="f"><span>❌ 謊話</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="t" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">16.</span> 村民乙：「電視上那位湯姆森爺爺，就是第一個在原子裡找到電子的人。」<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q16" value="t"><span>✅ 真話</span></label>
+        <label data-v="f"><input type="radio" name="q16" value="f"><span>❌ 謊話</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="f" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">17.</span> 村民丙：「那位道爾頓先生說，原子其實是一碟『葡萄乾布丁』！」<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q17" value="t"><span>✅ 真話</span></label>
+        <label data-v="f"><input type="radio" name="q17" value="f"><span>❌ 謊話</span></label>
+      </div>
+    </div>
+
+    <div class="q" data-ans="t" data-pts="5">
+      <span class="pts">5 分</span>
+      <span class="no">18.</span> 村民丁：「玻爾還用量子化的魔法，成功解釋了氫原子的光譜。」<br>
+      <div class="opts">
+        <label data-v="t"><input type="radio" name="q18" value="t"><span>✅ 真話</span></label>
+        <label data-v="f"><input type="radio" name="q18" value="f"><span>❌ 謊話</span></label>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-submit" data-lv="5" onclick="submitLevel(5)">🏆 提交全部關卡，逃出密室結算分數</button>
+    </div>
+  </div>
+  <div class="button-row">
+    <button class="btn btn-reset" onclick="resetGame()">🔄 重新開始（回到首頁）</button>
+  </div>
+  <p style="text-align:center;font-size:13px;color:#57677f;">規則：15分鐘內依序通關。每關須全數作答才能提交；時間到或完成第5關即自動結算。</p>
+  <footer>化地瑪聖母女子學校 · 高三（文科）綜合科學 · 微觀密室逃脫：原子結構達人｜依澳門基本學力要求：B─3 科學發展歷史、B─6 建構模型的價值與局限</footer>
+</div>
+
+<!-- ============ 結果彈窗 ============ -->
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="trophy" id="trophy">🔐</div>
+    <h2 id="resultTitle">逃出成功！</h2>
+    <div class="score-big"><span id="finalScore">0</span><span style="font-size:26px;color:#7b8ea9;"> / 100</span></div>
+    <div class="grade-msg" id="gradeMsg"></div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="analysis" id="analysis"></div>
+    <button class="btn btn-reset" onclick="closeResult()">關閉</button>
+  </div>
+</div>
+
+<script>
+  var TIME_LIMIT = 900;
+  var timeLeft = TIME_LIMIT;
+  var timerId = null;
+  var finished = false;
+  var levelScores = {1:0, 2:0, 3:0, 4:0, 5:0};
+  var submitted = {1:false, 2:false, 3:false, 4:false, 5:false};
+
+  function fmt(sec) { var m = Math.floor(sec / 60), s = sec % 60; return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s); }
+  function updateTimer() {
+    var el = document.getElementById('timer');
+    el.textContent = fmt(timeLeft);
+    el.className = 'timer';
+    if (timeLeft <= 60) el.classList.add('danger');
+    else if (timeLeft <= 300) el.classList.add('warn');
+  }
+  function startTimer() {
+    if (timerId) return;
+    timerId = setInterval(function () {
+      timeLeft--;
+      updateTimer();
+      if (timeLeft <= 0) { clearInterval(timerId); finishAll('⏰ 時間到！密室自動鎖定並結算。'); }
+    }, 1000);
+  }
+
+  function startGame() {
+    var cls = document.getElementById('clsSel').value;
+    var grp = document.getElementById('grpSel').value;
+    if (!cls || !grp) {
+      document.getElementById('pickErr').style.display = 'block';
+      return;
+    }
+    document.getElementById('pickErr').style.display = 'none';
+    document.getElementById('clsShow').textContent = cls;
+    document.getElementById('grpShow').textContent = grp;
+    document.getElementById('startOverlay').classList.add('hide');
+    startTimer();
+    window.scrollTo(0, 0);
+  }
+
+  function userAnswer(q) {
+    var sel = q.querySelector('select');
+    if (sel) return sel.value;
+    var c = q.querySelector('input[type=radio]:checked');
+    return c ? c.value : '';
+  }
+  function levelQuestions(n) { return Array.prototype.slice.call(document.querySelectorAll('#lv' + n + ' .q[data-ans]')); }
+
+  // 檢查該關是否全部作答
+  function levelComplete(n) {
+    return levelQuestions(n).every(function (q) { return userAnswer(q) !== ''; });
+  }
+
+  function gradeLevel(n) {
+    var qs = levelQuestions(n), total = 0, got = 0;
+    qs.forEach(function (q) {
+      var pts = parseInt(q.getAttribute('data-pts') || '0', 10);
+      total += pts;
+      var u = userAnswer(q);
+      var ok = u !== '' && u === q.getAttribute('data-ans');
+      q.classList.remove('ok', 'no');
+      q.classList.add(ok ? 'ok' : 'no');
+      if (ok) got += pts;
+    });
+    return { got: got, total: total };
+  }
+  function disableLevel(n) {
+    var sec = document.getElementById('lv' + n);
+    sec.querySelectorAll('input[type=radio]').forEach(function (r) { r.disabled = true; });
+    sec.querySelectorAll('select').forEach(function (s) { s.disabled = true; });
+    sec.querySelectorAll('.opts label').forEach(function (l) { l.style.pointerEvents = 'none'; });
+    sec.querySelectorAll('button[data-lv]').forEach(function (b) { b.disabled = true; });
+    sec.classList.add('done');
+  }
+  function refreshProgress() {
+    var sum = 0;
+    for (var i = 1; i <= 5; i++) {
+      var chip = document.getElementById('lv' + i + 'Chip');
+      if (submitted[i]) {
+        sum += levelScores[i];
+        if (chip) chip.textContent = '本關 ' + levelScores[i] + ' 分';
+      } else if (chip) chip.textContent = '';
+    }
+    document.getElementById('cumLabel').textContent = '累計 ' + sum + ' / 100 分';
+    document.getElementById('progressFill').style.width = (sum / 100 * 100) + '%';
+  }
+  function submitLevel(n) {
+    if (finished || submitted[n]) return;
+    if (!levelComplete(n)) {
+      alert('🚨 第 ' + n + ' 關尚未完成！請答完該關全部題目，才能解鎖下一關。');
+      levelQuestions(n).forEach(function (q) {
+        if (userAnswer(q) === '') q.style.outline = '2px solid #e63946';
+        else q.style.outline = '';
+      });
+      return;
+    }
+    levelQuestions(n).forEach(function (q) { q.style.outline = ''; });
+    var r = gradeLevel(n);
+    levelScores[n] = r.got;
+    submitted[n] = true;
+    disableLevel(n);
+    refreshProgress();
+    alert('✨ 第 ' + n + ' 關完成！本關得分 ' + r.got + ' / ' + r.total + ' 分');
+    if (n < 5) {
+      var next = document.getElementById('lv' + (n + 1));
+      next.classList.add('visible');
+      next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      finishAll('🔑 你找齊全部鎖鑰，逃出原子密室！');
+    }
+  }
+
+  function saveRecord(total) {
+    try {
+      var key = 'escape' + document.getElementById('clsShow').textContent + '_' + document.getElementById('grpShow').textContent;
+      var arr = JSON.parse(localStorage.getItem(key) || '[]');
+      arr.push({ t: new Date().toLocaleString(), s: total });
+      if (arr.length > 20) arr = arr.slice(-20);
+      localStorage.setItem(key, JSON.stringify(arr));
+    } catch (e) {}
+  }
+
+  function buildAnalysis(total) {
+    var names = {1:'第1關 道爾頓檔案室', 2:'第2關 湯姆森布丁實驗室', 3:'第3關 盧瑟福α粒子射擊場', 4:'第4關 玻爾軌道密室', 5:'第5關 密室狼人殺'};
+    var hint = {1:'道爾頓原子說與定比定律', 2:'湯姆森葡萄乾布丁模型', 3:'盧瑟福α粒子散射實驗', 4:'玻爾的量子化軌道模型', 5:'各科學家的模型與發現歸納'};
+    var best = 1, worst = 1;
+    for (var i = 2; i <= 5; i++) {
+      if (levelScores[i] > levelScores[best]) best = i;
+      if (levelScores[i] < levelScores[worst]) worst = i;
+    }
+    var html = '<b>📊 本組闖關分析</b><br>';
+    html += '本次總分 <b>' + total + '</b> / 100 分（得分率 ' + Math.round(total) + '%）。<br>';
+    html += '🟢 強項：<span class="good">' + names[best] + '</span>（' + levelScores[best] + ' / 20 分）<br>';
+    html += '🔴 待加強：<span class="weak">' + names[worst] + '</span>（' + levelScores[worst] + ' / 20 分）<br>';
+    html += '📖 建議溫習：' + hint[worst];
+    // 歷史紀錄（同組先前成績）
+    try {
+      var key = 'escape' + document.getElementById('clsShow').textContent + '_' + document.getElementById('grpShow').textContent;
+      var arr = JSON.parse(localStorage.getItem(key) || '[]');
+      if (arr.length >= 2) {
+        var prev = arr[arr.length - 2].s;
+        var trend = (total > prev) ? '▲ 較上次上升 ' + (total - prev) + ' 分' : (total < prev) ? '▼ 較上次下降 ' + (prev - total) + ' 分' : '＝ 與上次持平';
+        html += '<div class="his">📈 同組過往紀錄：' + arr.slice(-5).map(function (r) { return r.s + ' 分'; }).join(' → ') + '<br>' + trend + '</div>';
+      }
+    } catch (e) {}
+    document.getElementById('analysis').innerHTML = html;
+  }
+
+  function finishAll(title) {
+    if (finished) return;
+    finished = true;
+    if (timerId) clearInterval(timerId);
+    document.getElementById('resultTitle').textContent = title;
+    var total = 0, correct = 0, wrong = 0, skipped = 0;
+    for (var i = 1; i <= 5; i++) {
+      if (!submitted[i]) { gradeLevel(i); submitted[i] = true; disableLevel(i); }
+      total += levelScores[i];
+    }
+    document.querySelectorAll('.q[data-ans]').forEach(function (q) {
+      var u = userAnswer(q);
+      if (u === '') skipped++;
+      else if (u === q.getAttribute('data-ans')) correct++;
+      else wrong++;
+    });
+    refreshProgress();
+    var pct = total / 100, trophy, msg;
+    if (pct >= 0.9)      { trophy = '🏆'; msg = '密室逃脫傳奇！完美通關！'; }
+    else if (pct >= 0.75) { trophy = '🌟'; msg = '金牌探員！漂亮逃出原子密室！'; }
+    else if (pct >= 0.6)  { trophy = '👍'; msg = '銀牌探員！成功逃脫！'; }
+    else if (pct >= 0.4)  { trophy = '📖'; msg = '勉強逃出…建議再溫習課本喔！'; }
+    else                  { trophy = '💪'; msg = '受困密室…多回顧原子結構模型的演變吧！'; }
+    if (levelScores[5] === 20) msg += '（成功揪出內鬼！）';
+    var names = {1:'第1關 道爾頓檔案室', 2:'第2關 湯姆森布丁實驗室', 3:'第3關 盧瑟福α粒子射擊場', 4:'第4關 玻爾軌道密室', 5:'第5關 密室狼人殺'};
+    var html = '';
+    for (var i = 1; i <= 5; i++) html += '<div class="row"><span>' + names[i] + '</span><span><b>' + levelScores[i] + '</b> / 20 分</span></div>';
+    html += '<div class="row" style="font-weight:700;"><span>總作答</span><span>答對 ' + correct + ' 題、答錯 ' + wrong + ' 題、未作答 ' + skipped + ' 題</span></div>';
+    document.getElementById('finalScore').textContent = total;
+    document.getElementById('trophy').textContent = trophy;
+    document.getElementById('gradeMsg').textContent = msg;
+    document.getElementById('breakdown').innerHTML = html;
+    saveRecord(total);
+    buildAnalysis(total);
+    document.getElementById('overlay').classList.add('show');
+  }
+
+  function closeResult() { document.getElementById('overlay').classList.remove('show'); }
+  function resetGame() {
+    finished = false;
+    timeLeft = TIME_LIMIT;
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    levelScores = {1:0, 2:0, 3:0, 4:0, 5:0};
+    submitted = {1:false, 2:false, 3:false, 4:false, 5:false};
+    document.querySelectorAll('input[type=radio]').forEach(function (r) { r.checked = false; r.disabled = false; });
+    document.querySelectorAll('.opts label').forEach(function (l) { l.classList.remove('sel'); l.style.pointerEvents = ''; });
+    document.querySelectorAll('select').forEach(function (s) { s.value = ''; s.disabled = false; s.classList.remove('hl'); });
+    document.querySelectorAll('.q').forEach(function (q) { q.classList.remove('ok', 'no'); q.style.outline = ''; });
+    document.querySelectorAll('.section').forEach(function (s) {
+      s.classList.remove('done');
+      if (s.getAttribute('id') !== 'lv1') s.classList.remove('visible');
+    });
+    document.querySelectorAll('button[data-lv]').forEach(function (b) { b.disabled = false; });
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('startOverlay').classList.remove('hide');
+    document.getElementById('pickErr').style.display = 'none';
+    document.getElementById('clsSel').value = '';
+    document.getElementById('grpSel').value = '';
+    updateTimer();
+    refreshProgress();
+    window.scrollTo(0, 0);
+  }
+
+  // 選取答案時高亮
+  document.querySelectorAll('.opts label').forEach(function (label) {
+    label.addEventListener('click', function () {
+      var opts = label.closest('.opts');
+      opts.querySelectorAll('label').forEach(function (l) { l.classList.remove('sel'); });
+      label.classList.add('sel');
+      var q = label.closest('.q');
+      if (q) q.style.outline = '';
+    });
+  });
+  document.querySelectorAll('.match-right select').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      sel.classList.add('hl');
+      var q = sel.closest('.q');
+      if (q) q.style.outline = '';
+    });
+  });
+
+  document.getElementById('overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeResult();
+  });
+  updateTimer();
+</script>
+</body>
+</html>
